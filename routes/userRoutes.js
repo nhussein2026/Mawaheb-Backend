@@ -3,7 +3,8 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const { authenticated } = require("../middlewares/authMiddleware");
 const multer = require("multer");
-const upload = multer({ dest: "uploads" }); // set up Multer
+const storage = require("../utils/cloudinary");
+const upload = multer({ storage });
 
 // Get all users
 router.get("/users", authenticated, userController.fetchAllUsers);
