@@ -17,7 +17,6 @@ const StudentReport = require("../models/StudentReport");
 // Update User Info
 exports.updateUser = [
   async (req, res) => {
-    console.log("this is update req: ", req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
