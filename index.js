@@ -78,4 +78,13 @@ app.use("/admin", adminRoutes);
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+// Add this after your middleware setup
+app.get("/", (req, res) => {
+  res.json({
+    message: "API is running successfully",
+    status: "OK",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 module.exports = app;
