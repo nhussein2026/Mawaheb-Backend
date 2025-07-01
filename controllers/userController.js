@@ -1,6 +1,5 @@
-const mongoose = require("mongoose");
 const User = require("../models/User");
-const { body, validationResult } = require("express-validator");
+const { validationResult } = require("express-validator");
 const Certificate = require("../models/Certificate");
 const Course = require("../models/Course");
 const Event = require("../models/Event");
