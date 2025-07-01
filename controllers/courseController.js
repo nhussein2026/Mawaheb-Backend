@@ -1,29 +1,18 @@
 const Course = require("../models/Course");
 const multer = require("multer");
-const path = require("path");
+const cloudinaryStorage = require("../utils/cloudinaryStorage"); // Adjust path as needed
+const cloudinary = require("../config/cloudinary"); // Adjust path as needed
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Upload directory
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
-  },
-});
-
+// Configure multer with Cloudinary storage
 const upload = multer({
-  storage: storage,
+  storage: cloudinaryStorage,
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif/;
+    const filetypes = /jpeg|jpg|png|gif|webp/;
     const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    if (mimetype && extname) {
+    if (mimetype) {
       return cb(null, true);
     } else {
-      cb("Error: Images Only!");
+      cb(new Error("Error: Images Only!"));
     }
   },
 }).single("course_image"); // Accept a single file with the name 'course_image'
@@ -32,7 +21,7 @@ const courseController = {
   createCourse: async (req, res) => {
     upload(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ message: err });
+        return res.status(400).json({ message: err.message });
       }
 
       try {
@@ -43,7 +32,7 @@ const courseController = {
           title,
           description,
           user: userId,
-          course_image: req.file ? req.file.path : undefined,
+          course_image: req.file ? req.file.path : undefined, // Cloudinary URL
         });
 
         await course.save();
@@ -84,7 +73,7 @@ const courseController = {
   updateCourse: async (req, res) => {
     upload(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ message: err });
+        return res.status(400).json({ message: err.message });
       }
 
       try {
@@ -95,10 +84,26 @@ const courseController = {
           return res.status(404).json({ message: "Course not found" });
         }
 
+        // If updating with a new image, delete the old one from Cloudinary
+        if (req.file && course.course_image) {
+          try {
+            // Extract public_id from the old image URL
+            const publicId = course.course_image
+              .split("/")
+              .slice(-2)
+              .join("/")
+              .split(".")[0];
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.error("Error deleting old image:", deleteError);
+            // Continue with update even if deletion fails
+          }
+        }
+
         course.title = title || course.title;
         course.description = description || course.description;
         if (req.file) {
-          course.course_image = req.file.path;
+          course.course_image = req.file.path; // Cloudinary URL
         }
 
         await course.save();
@@ -118,6 +123,22 @@ const courseController = {
 
       if (!course || course.user.toString() !== req.user.id.toString()) {
         return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Delete image from Cloudinary if it exists
+      if (course.course_image) {
+        try {
+          // Extract public_id from the image URL
+          const publicId = course.course_image
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (deleteError) {
+          console.error("Error deleting image from Cloudinary:", deleteError);
+          // Continue with course deletion even if image deletion fails
+        }
       }
 
       await course.deleteOne();
