@@ -4,7 +4,7 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "tawasul/users",
+    folder: "mawaheb/users",
     allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
     transformation: [{ width: 500, height: 500, crop: "limit" }],
   },
