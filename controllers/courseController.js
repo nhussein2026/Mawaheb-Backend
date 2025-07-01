@@ -1,7 +1,7 @@
 const Course = require("../models/Course");
 const multer = require("multer");
-const cloudinaryStorage = require("../utils/cloudinaryStorage"); // Adjust path as needed
-const cloudinary = require("../config/cloudinary"); // Adjust path as needed
+const cloudinaryStorage = require("../utils/cloudinary");
+const cloudinary = require("../config/cloudinary");
 
 // Configure multer with Cloudinary storage
 const upload = multer({
