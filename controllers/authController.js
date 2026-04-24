@@ -71,7 +71,7 @@ exports.login = async (req, res) => {
       (err, token) => {
         if (err) throw err;
         res.json({ token, user: payload.user });
-      }
+      },
     );
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -95,7 +95,7 @@ exports.forgetPassword = async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: "15m",
-      }
+      },
     );
 
     // Send the token to the user's email
@@ -136,7 +136,7 @@ exports.resetPassword = async (req, res) => {
     // Verify the token sent by the user
     const decodedToken = jwt.verify(
       req.params.token,
-      process.env.ACCESS_TOKEN_SECRET
+      process.env.ACCESS_TOKEN_SECRET,
     );
     const { newPassword } = req.body;
     // If the token is invalid, return an error
