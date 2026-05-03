@@ -27,6 +27,21 @@ const userSchema = new mongoose.Schema({
     ],
     default: "User",
   },
+  requestedRole: {
+    type: String,
+    enum: [
+      "User",
+      "Employee",
+      "Admin",
+      "Institute Student",
+      "Scholarship Student",
+    ],
+  },
+  roleRequestStatus: {
+    type: String,
+    enum: ["None", "Pending", "Approved", "Rejected"],
+    default: "None",
+  },
   imageUrl: {
     type: String,
   },

@@ -576,3 +576,95 @@ exports.getAllUsers = async (req, res) => {
     });
   }
 };
+
+// Submit a role request
+exports.submitRoleRequest = async (req, res) => {
+  try {
+    const { requestedRole } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.requestedRole = requestedRole;
+    user.roleRequestStatus = "Pending";
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Role request submitted successfully",
+      user: {
+        id: user._id,
+        requestedRole: user.requestedRole,
+        roleRequestStatus: user.roleRequestStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error submitting role request:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Get all pending role requests (Admin only)
+exports.getPendingRoleRequests = async (req, res) => {
+  try {
+    if (req.user.role !== "Admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const requests = await User.find({ roleRequestStatus: "Pending" })
+      .select("name email role requestedRole roleRequestStatus createdAt")
+      .lean();
+
+    res.json({
+      success: true,
+      data: requests,
+    });
+  } catch (error) {
+    console.error("Error fetching role requests:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Handle role request (Admin only)
+exports.handleRoleRequest = async (req, res) => {
+  try {
+    if (req.user.role !== "Admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { userId } = req.params;
+    const { status } = req.body; // "Approved" or "Rejected"
+
+    if (!["Approved", "Rejected"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.roleRequestStatus = status;
+    if (status === "Approved") {
+      user.role = user.requestedRole;
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Role request ${status.toLowerCase()} successfully`,
+      data: {
+        id: user._id,
+        role: user.role,
+        roleRequestStatus: user.roleRequestStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error handling role request:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+

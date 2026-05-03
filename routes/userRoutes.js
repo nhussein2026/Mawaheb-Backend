@@ -33,4 +33,9 @@ router.delete("/users/:id", authenticated, userController.deleteUser);
 //user profile endpoint
 router.get("/profile", authenticated, userController.fetchUserProfile);
 
+// Role Request Routes
+router.post("/role-request", authenticated, userController.submitRoleRequest);
+router.get("/admin/role-requests", authenticated, userController.getPendingRoleRequests);
+router.put("/admin/role-requests/:userId", authenticated, userController.handleRoleRequest);
+
 module.exports = router;
