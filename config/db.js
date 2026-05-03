@@ -10,6 +10,11 @@ const connectDB = async () => {
   }
 
   try {
+    // Check if already connected
+    if (mongoose.connection.readyState === 1) {
+      return;
+    }
+
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 10000, // fail faster if DB unreachable
       socketTimeoutMS: 45000,

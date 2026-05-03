@@ -16,13 +16,6 @@ const seedAdmin = async () => {
   }
 
   try {
-    // Check if any admin already exists in the system
-    const adminExists = await User.findOne({ role: "Admin" });
-    if (adminExists) {
-      console.log("✅ System already has one or more Admin accounts.");
-      return;
-    }
-
     // Check if a user with the specified admin email already exists
     let user = await User.findOne({ email: adminEmail.toLowerCase() });
 
