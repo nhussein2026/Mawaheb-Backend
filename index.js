@@ -13,6 +13,7 @@ const statRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const scholarshipStudentRoutes = require("./routes/scholarshipStudentRouts");
 const semesterRoutes = require("./routes/semesterRoutes");
+const seedAdmin = require("./utils/seedAdmin");
 
 require("dotenv").config();
 const cors = require("cors");
@@ -27,6 +28,14 @@ app.use(express.json());
 
 // Connect to MongoDB
 const connectDB = require("./config/db");
+
+// Initialize Database and Seed Admin
+connectDB().then(() => {
+  seedAdmin();
+}).catch(err => {
+  console.error("Failed to connect to DB on startup:", err);
+});
+
 
 // Health check function
 const getHealthStatus = async () => {
@@ -289,8 +298,8 @@ const getHealthHTML = (healthData) => {
                 <div class="status-item">
                     <span class="status-label">Uptime</span>
                     <span class="status-value">${Math.floor(
-                      healthData.uptime / 3600
-                    )}h ${Math.floor(
+    healthData.uptime / 3600
+  )}h ${Math.floor(
     (healthData.uptime % 3600) / 60
   )}m ${Math.floor(healthData.uptime % 60)}s</span>
                 </div>
@@ -308,67 +317,61 @@ const getHealthHTML = (healthData) => {
                 <h3><span class="emoji">🗄️</span>Database Status</h3>
                 <div class="status-item">
                     <span class="status-label">Connection</span>
-                    <span class="status-value ${
-                      healthData.database.status === "connected"
-                        ? "status-success"
-                        : "status-error"
-                    }">
+                    <span class="status-value ${healthData.database.status === "connected"
+      ? "status-success"
+      : "status-error"
+    }">
                         ${statusIcon} ${healthData.database.status.toUpperCase()}
                     </span>
                 </div>
-                ${
-                  healthData.database.host
-                    ? `
+                ${healthData.database.host
+      ? `
                 <div class="status-item">
                     <span class="status-label">Host</span>
                     <span class="status-value">${healthData.database.host}</span>
                 </div>
                 `
-                    : ""
-                }
-                ${
-                  healthData.database.name
-                    ? `
+      : ""
+    }
+                ${healthData.database.name
+      ? `
                 <div class="status-item">
                     <span class="status-label">Database</span>
                     <span class="status-value">${healthData.database.name}</span>
                 </div>
                 `
-                    : ""
-                }
-                ${
-                  healthData.database.collections
-                    ? `
+      : ""
+    }
+                ${healthData.database.collections
+      ? `
                 <div class="status-item">
                     <span class="status-label">Collections</span>
                     <span class="status-value">${healthData.database.collections}</span>
                 </div>
                 `
-                    : ""
-                }
-                ${
-                  healthData.database.collectionNames
-                    ? `
+      : ""
+    }
+                ${healthData.database.collectionNames
+      ? `
                 <div class="collections-list">
                     ${healthData.database.collectionNames
-                      .map(
-                        (name) => `<span class="collection-tag">${name}</span>`
-                      )
-                      .join("")}
+        .map(
+          (name) => `<span class="collection-tag">${name}</span>`
+        )
+        .join("")}
                 </div>
                 `
-                    : ""
-                }
-                ${
-                  healthData.database.error
-                    ? `
+      : ""
+    }
+                ${healthData.database.error
+      ? `
                 <div class="status-item">
                     <span class="status-label">Error</span>
                     <span class="status-value status-error">${healthData.database.error}</span>
                 </div>
                 `
-                    : ""
-                }
+      : ""
+    }
             </div>
             
             <div class="status-card">
@@ -376,34 +379,34 @@ const getHealthHTML = (healthData) => {
                 <div class="status-item">
                     <span class="status-label">RSS</span>
                     <span class="status-value">${(
-                      healthData.memory.rss /
-                      1024 /
-                      1024
-                    ).toFixed(2)} MB</span>
+      healthData.memory.rss /
+      1024 /
+      1024
+    ).toFixed(2)} MB</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">Heap Used</span>
                     <span class="status-value">${(
-                      healthData.memory.heapUsed /
-                      1024 /
-                      1024
-                    ).toFixed(2)} MB</span>
+      healthData.memory.heapUsed /
+      1024 /
+      1024
+    ).toFixed(2)} MB</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">Heap Total</span>
                     <span class="status-value">${(
-                      healthData.memory.heapTotal /
-                      1024 /
-                      1024
-                    ).toFixed(2)} MB</span>
+      healthData.memory.heapTotal /
+      1024 /
+      1024
+    ).toFixed(2)} MB</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">External</span>
                     <span class="status-value">${(
-                      healthData.memory.external /
-                      1024 /
-                      1024
-                    ).toFixed(2)} MB</span>
+      healthData.memory.external /
+      1024 /
+      1024
+    ).toFixed(2)} MB</span>
                 </div>
             </div>
             

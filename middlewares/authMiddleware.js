@@ -24,7 +24,8 @@ const authenticated = (req, res, next) => {
 
 const isAdmin = async (req, res, next) => {
   try {
-    const user = await User.findOne({ _id: req.user.userId });
+    const user = await User.findOne({ _id: req.user.id });
+
     if (!user || user.role !== "Admin")
       return res.status(403).json({ message: "Access denied: Not an admin" });
     next();
@@ -36,7 +37,8 @@ const isAdmin = async (req, res, next) => {
 
 const isEmployee = async (req, res, next) => {
   try {
-    const employee = await Employee.findOne({ user: req.user._id });
+    const employee = await Employee.findOne({ user: req.user.id });
+
     if (!employee)
       return res
         .status(403)
