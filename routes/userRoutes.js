@@ -38,4 +38,8 @@ router.post("/role-request", authenticated, userController.submitRoleRequest);
 router.get("/admin/role-requests", authenticated, userController.getPendingRoleRequests);
 router.put("/admin/role-requests/:userId", authenticated, userController.handleRoleRequest);
 
+// Ticket Routes
+router.get("/ticket", authenticated, userController.getUserTickets);
+router.post("/ticket", authenticated, userController.createTicket);
+
 module.exports = router;

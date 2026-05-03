@@ -51,8 +51,8 @@ const userAchievementController = {
           userAchievement,
         });
       } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
+        console.error("Error in createUserAchievement:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
       }
     });
   },
@@ -74,14 +74,14 @@ const userAchievementController = {
       const userAchievement = await UserAchievement.findById(req.params.id);
       if (
         !userAchievement ||
-        userAchievement.userId.toString() !== req.user._id.toString()
+        userAchievement.user.toString() !== req.user.id.toString()
       ) {
         return res.status(404).json({ message: "User Achievement not found" });
       }
       res.status(200).json(userAchievement);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Server error" });
+      console.error("Error in getUserAchievementById:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
   },
 
@@ -97,7 +97,7 @@ const userAchievementController = {
 
         if (
           !userAchievement ||
-          userAchievement.userId.toString() !== req.user.id.toString()
+          userAchievement.user.toString() !== req.user.id.toString()
         ) {
           return res
             .status(404)
@@ -118,8 +118,8 @@ const userAchievementController = {
           userAchievement,
         });
       } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
+        console.error("Error in updateUserAchievement:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
       }
     });
   },
@@ -130,7 +130,7 @@ const userAchievementController = {
 
       if (
         !userAchievement ||
-        userAchievement.userId.toString() !== req.user.id.toString()
+        userAchievement.user.toString() !== req.user.id.toString()
       ) {
         return res.status(404).json({ message: "User Achievement not found" });
       }
@@ -140,8 +140,8 @@ const userAchievementController = {
         .status(200)
         .json({ message: "User Achievement deleted successfully" });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Server error" });
+      console.error("Error in deleteUserAchievement:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
   },
 };

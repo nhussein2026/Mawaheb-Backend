@@ -163,7 +163,7 @@ exports.fetchUserProfile = async (req, res) => {
       const instituteStudentProfile = await InstituteStudent.findOne({
         user: userId,
       });
-      profileData = { user, instituteStudentProfile };
+      profileData = { user, statistics, instituteStudentProfile };
     } else if (user.role === "Scholarship Student") {
       // Fetch scholarship student-specific data
       const scholarshipStudentProfile = await ScholarshipStudent.findOne({
@@ -668,3 +668,37 @@ exports.handleRoleRequest = async (req, res) => {
   }
 };
 
+// Ticket Operations
+exports.createTicket = async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    const userId = req.user.id;
+
+    if (!title || !description) {
+      return res.status(400).json({ message: "Title and description are required" });
+    }
+
+    const ticket = new Ticket({
+      user: userId,
+      title,
+      description,
+    });
+
+    await ticket.save();
+    res.status(201).json({ message: "Ticket created successfully", ticket });
+  } catch (error) {
+    console.error("Error creating ticket:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+exports.getUserTickets = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tickets = await Ticket.find({ user: userId }).sort({ createdAt: -1 });
+    res.status(200).json(tickets);
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
