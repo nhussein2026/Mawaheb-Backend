@@ -17,8 +17,8 @@ router.get(
 router.get(
   "/allReports",
   authenticated,
-  isAdmin,
   isEmployee,
+  isAdmin,
   studentReportController.allReports
 );
 router.get(
