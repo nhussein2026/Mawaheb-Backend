@@ -50,4 +50,17 @@ const isEmployee = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticated, isAdmin, isEmployee };
+const isAdminOrEmployee = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || (user.role !== "Admin" && user.role !== "Employee")) {
+      return res.status(403).json({ message: "Access denied: Not an admin or employee" });
+    }
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { authenticated, isAdmin, isEmployee, isAdminOrEmployee };

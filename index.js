@@ -15,6 +15,7 @@ const scholarshipStudentRoutes = require("./routes/scholarshipStudentRouts");
 const semesterRoutes = require("./routes/semesterRoutes");
 const seedAdmin = require("./utils/seedAdmin");
 const employeeRoutes = require("./routes/employeeRoutes");
+const ticketRoutes = require("./routes/ticketRoutes");
 
 require("dotenv").config();
 const cors = require("cors");
@@ -518,6 +519,7 @@ app.use("/scholarship-student", scholarshipStudentRoutes);
 app.use("/semester", semesterRoutes);
 app.use("/admin", adminRoutes);
 app.use("/employee", employeeRoutes);
+app.use("/tickets", ticketRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {
