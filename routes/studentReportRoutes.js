@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const studentReportController = require("../controllers/studentReportController");
-const { authenticated, isAdmin } = require("../middlewares/authMiddleware");
+const { authenticated, isAdmin, isEmployee } = require("../middlewares/authMiddleware");
 
 // Routes for student reports
 router.post(
@@ -18,6 +18,7 @@ router.get(
   "/allReports",
   authenticated,
   isAdmin,
+  isEmployee,
   studentReportController.allReports
 );
 router.get(
