@@ -14,8 +14,10 @@ const adminRoutes = require("./routes/adminRoutes");
 const scholarshipStudentRoutes = require("./routes/scholarshipStudentRouts");
 const semesterRoutes = require("./routes/semesterRoutes");
 const seedAdmin = require("./utils/seedAdmin");
+const seedInstitute = require("./utils/seedInstitute");
 const employeeRoutes = require("./routes/employeeRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
+const instituteRoutes = require("./routes/instituteRoutes");
 
 require("dotenv").config();
 const cors = require("cors");
@@ -34,6 +36,7 @@ const connectDB = require("./config/db");
 // Initialize Database and Seed Admin
 connectDB().then(() => {
   seedAdmin();
+  seedInstitute();
 }).catch(err => {
   console.error("Failed to connect to DB on startup:", err);
 });
@@ -520,6 +523,7 @@ app.use("/semester", semesterRoutes);
 app.use("/admin", adminRoutes);
 app.use("/employee", employeeRoutes);
 app.use("/tickets", ticketRoutes);
+app.use("/institute", instituteRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {

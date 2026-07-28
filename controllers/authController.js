@@ -59,7 +59,9 @@ exports.login = async (req, res) => {
     const payload = {
       user: {
         id: user.id,
+        name: user.name, // shown in portal headers / welcome banners
         role: user.role,
+        instituteRole: user.instituteRole, // needed to gate institute portal routes
         email: user.email,
       },
     };
