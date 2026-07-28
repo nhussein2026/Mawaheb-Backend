@@ -531,10 +531,12 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start the server (for local development)
+// Bind the port in every environment, production included: Render and Azure
+// App Service both run us as a plain `node index.js` and wait for something to
+// listen on $PORT before routing traffic. Exporting the app without listening
+// is a serverless pattern — under it the process stays alive on the Mongo
+// socket, never binds, and the platform kills the deploy on a port-scan timeout.
 const PORT = process.env.PORT || 3005;
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-}
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 module.exports = app;
