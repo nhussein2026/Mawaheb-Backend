@@ -15,6 +15,13 @@ const authenticated = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    // A valid signature is not enough: guardian tokens are signed with the same
+    // secret but carry a `guardian` claim and no `user`. Without this check they
+    // pass through here with req.user === undefined, leaving every downstream
+    // handler to dereference it.
+    if (!decoded.user || !decoded.user.id) {
+      return res.status(401).json({ msg: "Token is not valid" });
+    }
     req.user = decoded.user;
     next();
   } catch (err) {

@@ -8,6 +8,10 @@ const {
   isInstituteStudent,
   guardianAuth,
 } = require("../middlewares/authMiddleware");
+const {
+  guardianLoginIpLimiter,
+  guardianLoginAccountLimiter,
+} = require("../middlewares/rateLimit");
 const { uploadDoc } = require("../utils/uploads");
 
 const dashboardController = require("../controllers/institute/dashboardController");
@@ -93,7 +97,12 @@ router.post(
 // Guardian read-only portal (spec §6.15). Login is public; the reads
 // run under `guardianAuth`, scoped to one student. No user account.
 // ─────────────────────────────────────────────────────────────
-router.post("/guardian/login", guardianController.login);
+router.post(
+  "/guardian/login",
+  guardianLoginIpLimiter,
+  guardianLoginAccountLimiter,
+  guardianController.login
+);
 router.get("/guardian/overview", guardianAuth, guardianController.getOverview);
 router.get("/guardian/results", guardianAuth, guardianController.getResults);
 router.get("/guardian/evaluations", guardianAuth, guardianController.getEvaluations);

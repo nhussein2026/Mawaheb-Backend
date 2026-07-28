@@ -27,6 +27,14 @@ const mongoose = require("mongoose");
 
 const app = express();
 
+// In production the app sits behind Azure's reverse proxy, so req.ip would
+// otherwise be the proxy for every request — collapsing all clients into one
+// rate-limit bucket. Trust exactly one hop: trusting more would let a client
+// spoof X-Forwarded-For and slip past the limiter entirely.
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 // Enable All CORS Requests
 app.use(cors());
 app.use(express.json());
