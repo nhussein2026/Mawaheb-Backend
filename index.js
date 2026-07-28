@@ -45,7 +45,12 @@ const connectDB = require("./config/db");
 // Initialize Database and Seed Admin
 connectDB().then(async () => {
   seedAdmin();
-  seedInstitute();
+  // Academic years are institute domain data, not bootstrap plumbing — a real
+  // institute defines its own. Auto-seeding them is a dev convenience, so in
+  // production it requires an explicit opt-in.
+  if (process.env.NODE_ENV !== "production" || process.env.SEED_ACADEMIC_YEARS === "true") {
+    await seedInstitute();
+  }
   await warnIfMigrationsPending();
 }).catch(err => {
   console.error("Failed to connect to DB on startup:", err);

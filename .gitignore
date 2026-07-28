@@ -1,3 +1,24 @@
+# Dependencies
 node_modules
+
+# Environment
 .env
+.env.local
+.env.*.local
+
+# User uploads
 uploads
+
+# Yarn — this project installs with npm; package-lock.json is the source of
+# truth. These are generated Yarn/PnP artifacts (install state, unplugged
+# packages, resolver shims) and a second lockfile that would conflict with it.
+.yarn/
+.pnp.*
+yarn.lock
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store

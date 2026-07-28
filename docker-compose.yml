@@ -1,0 +1,13 @@
+# Local development database only — NOT for production.
+services:
+  mongo:
+    image: mongo:7                 # which MongoDB version to download & run
+    container_name: mawaheb-mongo  # a friendly name so you can find it later
+    restart: unless-stopped        # auto-restart if it crashes / after reboot
+    ports:
+      - "27017:27017"              # expose the DB to your machine on 27017
+    volumes:
+      - mongo_data:/data/db        # persist data outside the container
+
+volumes:
+  mongo_data:                      # named storage that survives restarts

@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"No tests yet\"",
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "migrate": "node scripts/migrations/runAll.js",
+    "seed": "node scripts/seed/seedInstitute.js"
   },
   "repository": {
     "type": "git",
