@@ -10,7 +10,7 @@ const InstituteStudent = require("../models/InstituteStudent");
 const FinancialReport = require("../models/FinancialReport");
 const Note = require("../models/Note");
 const Semester = require("../models/Semester");
-const Ticket = require("../models/Ticket");
+const Thread = require("../models/Thread");
 const StudentReport = require("../models/StudentReport");
 
 // Update User Info
@@ -132,7 +132,8 @@ exports.fetchUserProfile = async (req, res) => {
       FinancialReport.countDocuments({ user: userId }),
       Note.countDocuments({ user: userId }),
       Semester.countDocuments({ user: userId }),
-      Ticket.countDocuments({ user: userId }),
+      // Support tickets now live in Thread (category "support"); see plan §7.
+      Thread.countDocuments({ category: "support", author: userId }),
       StudentReport.countDocuments({ user: userId }),
     ]);
 

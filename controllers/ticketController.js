@@ -1,154 +1,257 @@
-const Ticket = require("../models/Ticket");
-const User = require("../models/User");
+// Support tickets — now backed by the unified Thread model (category
+// "support") + ThreadMessage, while keeping the exact legacy /tickets API
+// contract so the existing ticket UI is unchanged (plan §7). The single
+// legacy `response` field is represented as one ThreadMessage; status is
+// mapped between the old casing and the Thread's machine keys.
+const Thread = require("../models/Thread");
+const ThreadMessage = require("../models/ThreadMessage");
 
-// @desc    Create a new ticket
-// @route   POST /tickets
-// @access  Private
+const OLD_TO_SUPPORT = {
+  Open: "open",
+  "In Progress": "in_progress",
+  Resolved: "resolved",
+  Closed: "closed",
+};
+const SUPPORT_TO_OLD = {
+  open: "Open",
+  in_progress: "In Progress",
+  resolved: "Resolved",
+  closed: "Closed",
+};
+
+// Thread → legacy Ticket shape the frontend expects.
+const toTicket = (thread, responseText = "") => ({
+  _id: thread._id,
+  title: thread.subject,
+  description: thread.body,
+  status: SUPPORT_TO_OLD[thread.status] || "Open",
+  response: responseText || "",
+  user: thread.author,
+  assignedTo: thread.assignedTo || null,
+  createdAt: thread.createdAt,
+  updatedAt: thread.updatedAt,
+});
+
+// Latest reply body per thread id (the legacy single `response`).
+async function latestResponses(threadIds) {
+  const msgs = await ThreadMessage.find({ thread: { $in: threadIds } })
+    .sort({ createdAt: 1 })
+    .lean();
+  const map = {};
+  msgs.forEach((m) => {
+    map[String(m.thread)] = m.body; // ascending sort → last write wins
+  });
+  return map;
+}
+
+// @route POST /tickets
 exports.createTicket = async (req, res) => {
   try {
     const { title, description } = req.body;
-    const userId = req.user.id;
-
     if (!title || !description) {
-      return res.status(400).json({ message: "Title and description are required" });
+      return res
+        .status(400)
+        .json({ message: "Title and description are required" });
     }
-
-    const ticket = new Ticket({
-      user: userId,
-      title,
-      description,
+    const thread = await Thread.create({
+      category: "support",
+      subject: title,
+      body: description,
+      author: req.user.id,
+      status: "open",
+      lastMessageAt: new Date(),
+      lastMessageBy: req.user.id,
     });
-
-    await ticket.save();
-    res.status(201).json({ success: true, message: "Ticket created successfully", ticket });
+    res.status(201).json({
+      success: true,
+      message: "Ticket created successfully",
+      ticket: toTicket(thread, ""),
+    });
   } catch (error) {
     console.error("Error creating ticket:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// @desc    Get all tickets for the logged-in user
-// @route   GET /tickets/my
-// @access  Private
+// @route GET /tickets/my
 exports.getMyTickets = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const tickets = await Ticket.find({ user: userId }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: tickets });
+    const threads = await Thread.find({
+      category: "support",
+      author: req.user.id,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    const map = await latestResponses(threads.map((t) => t._id));
+    res.status(200).json({
+      success: true,
+      data: threads.map((t) => toTicket(t, map[String(t._id)])),
+    });
   } catch (error) {
     console.error("Error fetching user tickets:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// @desc    Get all tickets (Admin/Employee only)
-// @route   GET /tickets
-// @access  Private (Admin/Employee)
+// @route GET /tickets  (Admin/Employee)
 exports.getAllTickets = async (req, res) => {
   try {
-    // Check if user is Admin or Employee (using role from request)
-    // We'll rely on route-level middleware for strict checks, 
-    // but here's a secondary check just in case.
-    const tickets = await Ticket.find()
-      .populate("user", "name email")
+    const threads = await Thread.find({ category: "support" })
+      .populate("author", "name email")
       .populate("assignedTo", "name email")
-      .sort({ createdAt: -1 });
-      
-    res.status(200).json({ success: true, count: tickets.length, data: tickets });
+      .sort({ createdAt: -1 })
+      .lean();
+    const map = await latestResponses(threads.map((t) => t._id));
+    const data = threads.map((t) => toTicket(t, map[String(t._id)]));
+    res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
     console.error("Error fetching all tickets:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// @desc    Get ticket by ID
-// @route   GET /tickets/:id
-// @access  Private
+// @route GET /tickets/:id
 exports.getTicketById = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id)
-      .populate("user", "name email")
-      .populate("assignedTo", "name email");
-
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+    const thread = await Thread.findOne({
+      _id: req.params.id,
+      category: "support",
+    })
+      .populate("author", "name email")
+      .populate("assignedTo", "name email")
+      .lean();
+    if (!thread) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
     }
 
-    // Authorization check: Only the creator or Admin/Employee can view
     const isAdminOrEmployee = ["Admin", "Employee"].includes(req.user.role);
-
-    if (ticket.user._id.toString() !== req.user.id && !isAdminOrEmployee) {
-      return res.status(403).json({ success: false, message: "Not authorized to view this ticket" });
+    const ownerId = String(thread.author?._id || thread.author);
+    if (ownerId !== req.user.id && !isAdminOrEmployee) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized to view this ticket" });
     }
 
-    res.status(200).json({ success: true, data: ticket });
+    const map = await latestResponses([thread._id]);
+    res.status(200).json({ success: true, data: toTicket(thread, map[String(thread._id)]) });
   } catch (error) {
     console.error("Error fetching ticket by ID:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// @desc    Update ticket (Status, Response, Assignment)
-// @route   PUT /tickets/:id
-// @access  Private (Admin/Employee)
+// @route PUT /tickets/:id  (Admin/Employee) — status / response / assignment
 exports.updateTicket = async (req, res) => {
   try {
     const { status, response, assignedTo } = req.body;
-    
-    let ticket = await Ticket.findById(req.params.id);
 
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+    const thread = await Thread.findOne({
+      _id: req.params.id,
+      category: "support",
+    });
+    if (!thread) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
     }
-
-    // Check authorization (Admin or Employee only)
     if (!["Admin", "Employee"].includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "Not authorized to update tickets" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized to update tickets" });
     }
 
-    // Update fields if provided
-    if (status) ticket.status = status;
-    if (response) ticket.response = response;
-    if (assignedTo) ticket.assignedTo = assignedTo;
+    if (status) {
+      const mapped = OLD_TO_SUPPORT[status] || status;
+      thread.status = mapped;
+    }
+    if (assignedTo) thread.assignedTo = assignedTo;
 
-    ticket.updatedAt = Date.now();
-    await ticket.save();
+    // Single-response semantics: keep exactly one reply message, editing it in
+    // place so repeated saves don't stack duplicate replies.
+    let responseText;
+    if (response !== undefined) {
+      let msg = await ThreadMessage.findOne({ thread: thread._id }).sort({
+        createdAt: -1,
+      });
+      if (msg) {
+        msg.body = response;
+        await msg.save();
+      } else {
+        msg = await ThreadMessage.create({
+          thread: thread._id,
+          author: req.user.id,
+          body: response,
+        });
+      }
+      thread.lastMessageAt = new Date();
+      thread.lastMessageBy = req.user.id;
+      responseText = response;
+    }
 
-    res.status(200).json({ success: true, message: "Ticket updated successfully", data: ticket });
+    await thread.save();
+
+    if (responseText === undefined) {
+      const map = await latestResponses([thread._id]);
+      responseText = map[String(thread._id)];
+    }
+    res.status(200).json({
+      success: true,
+      message: "Ticket updated successfully",
+      data: toTicket(thread, responseText),
+    });
   } catch (error) {
     console.error("Error updating ticket:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// @desc    Delete ticket
-// @route   DELETE /tickets/:id
-// @access  Private
+// @route DELETE /tickets/:id
 exports.deleteTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
-
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+    const thread = await Thread.findOne({
+      _id: req.params.id,
+      category: "support",
+    });
+    if (!thread) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
     }
 
-    // Authorization check: Only the creator (if still open) or Admin can delete
     const isAdmin = req.user.role === "Admin";
-
-    if (ticket.user.toString() !== req.user.id && !isAdmin) {
-      return res.status(403).json({ success: false, message: "Not authorized to delete this ticket" });
+    if (String(thread.author) !== req.user.id && !isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized to delete this ticket" });
+    }
+    if (!isAdmin && thread.status !== "open") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot delete a ticket that is already in progress or resolved",
+      });
     }
 
-    // Optional: Only allow user to delete if ticket is still 'Open'
-    if (!isAdmin && ticket.status !== 'Open') {
-        return res.status(400).json({ success: false, message: "Cannot delete a ticket that is already in progress or resolved" });
-    }
-
-    await ticket.deleteOne();
+    await ThreadMessage.deleteMany({ thread: thread._id });
+    await thread.deleteOne();
 
     res.status(200).json({ success: true, message: "Ticket deleted successfully" });
   } catch (error) {
     console.error("Error deleting ticket:", error);
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };

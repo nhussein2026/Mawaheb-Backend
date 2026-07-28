@@ -15,6 +15,7 @@ const scholarshipStudentRoutes = require("./routes/scholarshipStudentRouts");
 const semesterRoutes = require("./routes/semesterRoutes");
 const seedAdmin = require("./utils/seedAdmin");
 const seedInstitute = require("./utils/seedInstitute");
+const warnIfMigrationsPending = require("./utils/pendingMigrations");
 const employeeRoutes = require("./routes/employeeRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
 const instituteRoutes = require("./routes/instituteRoutes");
@@ -34,9 +35,10 @@ app.use(express.json());
 const connectDB = require("./config/db");
 
 // Initialize Database and Seed Admin
-connectDB().then(() => {
+connectDB().then(async () => {
   seedAdmin();
   seedInstitute();
+  await warnIfMigrationsPending();
 }).catch(err => {
   console.error("Failed to connect to DB on startup:", err);
 });
